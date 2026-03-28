@@ -100,6 +100,19 @@ CLAUDE.md  >  OpenSpec  >  Beads  >  Superpowers
 | **STANDARD** | 1 service hoặc 1 bounded context. Không đổi external contract lớn. Rollback cost LOW/MEDIUM. | OpenSpec propose → Beads → Superpowers execute → verify → archive |
 | **FULL** | Multi-service; đổi data model quan trọng; đổi auth/billing/permission contract; cần migration hoặc rollout plan; rollback cost HIGH. | brainstorm → OpenSpec full flow → Beads graph → TDD → review → verify → archive |
 
+### Re-triage — Dynamic Flow Adjustment
+
+Triage không chỉ chạy 1 lần đầu. AI PHẢI re-triage khi phát hiện thông tin mới:
+
+| Trigger | Hành động |
+|---------|-----------|
+| Discovered work làm tăng scope | Re-classify flow level |
+| Phát hiện task chạm auth/billing/data/contract | Escalate lên STANDARD hoặc FULL ngay |
+| Dependency mới xuất hiện làm tăng scope | Re-classify |
+| Scope thu hẹp hơn dự kiến | Có thể downgrade flow |
+
+**Rule:** Nếu flow level tăng → escalate ngay, không tiếp tục flow cũ. Nếu giảm → xác nhận với user trước khi downgrade.
+
 ---
 
 ## 5. Tầng 3: Beads Task Schema
@@ -110,6 +123,9 @@ title: "Mô tả ngắn, rõ ràng"
 type: bug | feature | task | epic | chore | message
 priority: P0 | P1 | P2 | P3 | P4
 status: todo | ready | in_progress | blocked | review | done
+
+# INTENT — mục tiêu ban đầu của task (bất biến, không đổi theo spec evolution)
+intent: "Implement JWT refresh token flow theo spec auth v1"
 
 # SOURCE LINKS — task này sinh ra từ đâu?
 source:
@@ -132,18 +148,28 @@ execution:
 # ACCEPTANCE CRITERIA
 acceptance:
   delivery:   # behavior đúng, edge case cover đủ
-    - [ ] <mô tả behavior cần đúng, trỏ về scenario trong spec nếu có>
+    - [ ] verify_against_spec: <scenario trong spec cần đúng>
+    - [ ] verify_against_acceptance: <edge case / behavior cụ thể>
   governance: # dấu vết vận hành
     - [ ] tests_added_or_updated: required when applicable
     - [ ] verification_passed: yes
     - [ ] spec_delta_checked: yes
     - [ ] implementation_links_present: yes
 
+# DEFINITION OF READY — task chỉ được set "ready" khi đủ các điều sau
+ready_when:
+  - spec_ref hoặc rationale rõ ràng
+  - acceptance criteria có thể verify được
+  - dependency đã rõ (không còn unknown blocker)
+  - không còn ambiguity về scope
+
 # DEPENDENCY
 depends_on: []          # danh sách bd-id phải xong trước
 blocked_by: []          # danh sách bd-id hoặc external blocker string
 blocked_reason: []      # mô tả lý do, tương ứng 1-1 với blocked_by
 ```
+
+**Lưu ý về `intent`:** Khi spec thay đổi, AI dùng `intent` để quyết định task còn valid không. Nếu intent bị invalidate → split hoặc recreate task, không cập nhật intent.
 
 ---
 
@@ -153,8 +179,8 @@ AI phải xác nhận EXPLICIT từng mục — không được tự assume "xon
 
 ```
 DELIVERY
-  ✅ Đã verify behavior theo TỪNG delivery acceptance criteria
-  ✅ Đã verify đúng spec requirement (không chỉ dựa vào test pass)
+  ✅ verify_against_spec: đúng theo spec requirement (không chỉ test pass)
+  ✅ verify_against_acceptance: đúng theo từng delivery acceptance criteria
   ✅ Tests pass — hoặc ghi rõ "not applicable" + lý do
 
 GOVERNANCE
@@ -162,17 +188,23 @@ GOVERNANCE
   ✅ execution.pr_ref đã được điền
   ✅ execution.verification_ref đã được điền
      (CI link / test report / screenshot / benchmark — chọn loại phù hợp)
+
+NEGATIVE CHECKS
+  ❗ Không vi phạm bất kỳ rule nào trong CLAUDE.md
+  ❗ Không introduce breaking change ngoài scope spec
+  ❗ Không có behavior ngoài task scope trong code
 ```
 
 ---
 
-## 7. Anti-drift — Cả 2 chiều
+## 7. Anti-drift — Cả 2 chiều + Task ↔ Code
 
 | Trigger | Hành động bắt buộc |
 |---------|-------------------|
 | Code thay đổi behavior | Mở delta spec trong OpenSpec |
 | Task close | Confirm spec up-to-date hoặc ghi rõ "no update needed" |
 | **Spec/design thay đổi requirement** | **Update Beads tasks / dependency / priority / status** |
+| **Code chứa behavior ngoài task scope** | **Tạo task mới (discovered_from) hoặc rollback phần dư** |
 | Session kết thúc | `bd dolt push` + viết handoff note |
 | AI phát hiện việc ngoài scope | Tạo task mới với `discovered_from:<id>`, KHÔNG âm thầm làm |
 
@@ -187,6 +219,11 @@ Handoff note là bắt buộc khi kết thúc session. Format tối thiểu:
 
 ```markdown
 ## Handoff Note — [YYYY-MM-DD] [session-id]
+
+### State Snapshot
+- Active branch: <branch-name>
+- Current task: <bd-id> (status)
+- Last successful verification: <CI run # hoặc test report link>
 
 ### Đã làm
 - [bd-xxxx] <tên task> — DONE, PR #<n>
@@ -229,25 +266,33 @@ Handoff note là bắt buộc khi kết thúc session. Format tối thiểu:
 ## 2. Execution Policy
 (cách AI đưa ra quyết định)
 - Tầng 0 Triage: AI PHẢI phân loại (loại việc / rollback cost / scope)
-  trước khi làm bất cứ thứ gì.
+  trước khi làm bất cứ thứ gì. Re-triage khi phát hiện thông tin mới.
 - Layer precedence: CLAUDE.md > OpenSpec > Beads > Superpowers.
   Tầng thấp không override tầng cao; khi xung đột phải update artifact
   tầng thấp.
 - Discovered work: tạo `bd create --deps discovered-from:<id>`,
   KHÔNG tự làm ngoài scope.
+- Decision boundary: AI PHẢI hỏi lại user (không tự quyết) khi:
+  - Spec không rõ hoặc mâu thuẫn
+  - Có nhiều giải pháp đều hợp lý nhưng trade-off lớn
+  - Thay đổi có thể ảnh hưởng external contract
 
 ## 3. Quality Gates
 (điều kiện bắt buộc trước khi claim done)
-- Delivery acceptance: verify behavior theo từng acceptance criteria, tests pass (or justified skip)
-- Governance acceptance: spec_delta_checked, implementation_links_present
-- `bd close` prerequisites (inline — không cần tra design doc):
-  DELIVERY: ✅ verify behavior, ✅ verify spec requirement, ✅ tests pass or N/A
+- verify_against_spec: behavior đúng theo spec requirement
+- verify_against_acceptance: đúng theo từng acceptance criteria
+- Negative checks: không vi phạm CLAUDE.md rules, không breaking change ngoài scope
+- Governance: spec_delta_checked, implementation_links_present
+- `bd close` prerequisites (inline):
+  DELIVERY:   ✅ verify_against_spec, ✅ verify_against_acceptance, ✅ tests pass or N/A
   GOVERNANCE: ✅ spec delta archived/confirmed, ✅ pr_ref filled, ✅ verification_ref filled
+  NEGATIVE:   ❗ no CLAUDE.md violations, ❗ no out-of-scope breaking changes
 
 ## 4. Update Obligations
 (khi nào AI BẮT BUỘC cập nhật artifact)
 - Code đổi behavior → mở delta spec trong OpenSpec
 - Spec/design đổi → sync lại Beads tasks
+- Code chứa behavior ngoài scope → tạo discovered task hoặc rollback
 - Session kết thúc → handoff note + `bd dolt push`
 
 ## 5. Forbidden Behaviors
@@ -255,8 +300,9 @@ Handoff note là bắt buộc khi kết thúc session. Format tối thiểu:
 - Làm việc ngoài scope mà không tạo task
 - Tự `bd close` khi chưa qua quality gate
 - Override tầng cao bằng quyết định ở tầng thấp
-- Báo "done" mà không verify against acceptance criteria
+- Báo "done" mà không verify_against_spec và verify_against_acceptance
 - Assume "test pass = spec correct"
+- Tự quyết khi có trade-off lớn hoặc spec ambiguous
 
 ## 6. Repo-Specific Commands
 (lệnh chuẩn cho repo này — AI dùng chính xác các lệnh này)
@@ -273,6 +319,11 @@ Handoff note là bắt buộc khi kết thúc session. Format tối thiểu:
 ---
 
 ## 10. Luồng dữ liệu điển hình
+
+Tất cả flow đều có **abort path**: nếu verification FAIL, không được `bd close`. Phải:
+1. Update design trong OpenSpec, hoặc
+2. Tạo task fix mới (discovered_from), hoặc
+3. Re-triage nếu scope thực sự đã thay đổi.
 
 ### Feature trung bình (STANDARD flow)
 
@@ -300,11 +351,15 @@ Dev có idea / bug rollback cost MEDIUM
     ▼
 [Tầng 4 Superpowers: verification-before-completion]
     │
-    ▼
-[Quality Gate] Delivery ✅ + Governance ✅ → bd close
+    ├── PASS ──▶ [Quality Gate] Delivery ✅ + Governance ✅ → bd close
+    │                │
+    │                ▼
+    │           [Tầng 2 OpenSpec: /opsx:archive] → bd dolt push
     │
-    ▼
-[Tầng 2 OpenSpec: /opsx:archive] → bd dolt push
+    └── FAIL ──▶ [Abort path]
+                  ├── Update design (OpenSpec) → re-execute
+                  ├── Tạo task fix (discovered_from) → vào queue
+                  └── Re-triage nếu scope đổi → escalate flow nếu cần
 ```
 
 ### Feature mới (FULL flow)
@@ -336,14 +391,18 @@ Dev có idea
     ▼
 [Tầng 4 Superpowers: verification-before-completion + code-reviewer]
     │
-    ▼
-[Quality Gate] Delivery ✅ + Governance ✅ → bd close
+    ├── PASS ──▶ [Quality Gate] Delivery ✅ + Governance ✅ → bd close
+    │                │
+    │                ▼
+    │           [Tầng 2 OpenSpec: /opsx:archive] Merge delta → source of truth
+    │                │
+    │                ▼
+    │           [Handoff Protocol] bd dolt push + handoff note
     │
-    ▼
-[Tầng 2 OpenSpec: /opsx:archive] Merge delta → source of truth
-    │
-    ▼
-[Handoff Protocol] bd dolt push + handoff note
+    └── FAIL ──▶ [Abort path]
+                  ├── Update design (OpenSpec) → re-execute
+                  ├── Tạo task fix (discovered_from) → vào queue
+                  └── Re-triage nếu scope đổi → escalate flow nếu cần
 ```
 
 ### Bug nhỏ (LITE flow)
@@ -363,11 +422,12 @@ Bug report
     ▼
 Fix + test
     │
-    ▼
-[Quality Gate] verify acceptance → bd close (governance minimal)
+    ├── PASS ──▶ [Quality Gate] verify_against_spec + governance minimal
+    │                │
+    │                ▼
+    │           bd close → bd dolt push
     │
-    ▼
-[Tầng 3 Beads] bd dolt push
+    └── FAIL ──▶ Tạo task fix → re-triage nếu rollback cost hóa ra HIGH
 ```
 
 ---
@@ -380,6 +440,11 @@ Fix + test
 | AI update không đồng bộ | Quality gate cưỡng chế trước bd close |
 | Task graph thành requirement store | Beads chỉ giữ execution ledger; requirement ở OpenSpec |
 | Drift code ↔ spec | Anti-drift 2 chiều |
-| Context mất giữa session | Handoff protocol chính thức |
+| Drift task ↔ code (AI làm thêm ngoài scope) | Anti-drift row "code chứa behavior ngoài task scope" |
+| Context mất giữa session | Handoff protocol + state snapshot |
 | Discovered work không track | Rule tạo task bắt buộc |
-| AI chọn flow level sai | Rollback cost rule cưỡng chế |
+| AI chọn flow level sai | Rollback cost rule + re-triage trigger |
+| AI tự quyết khi ambiguous | Decision boundary rule trong CLAUDE.md |
+| Task "ready" nhưng chưa làm được | Definition of Ready trong task schema |
+| Spec evolve làm task invalid | Intent lock → split/recreate task |
+| Verification pass nhưng lệch requirement | verify_against_spec tách biệt với test pass |
