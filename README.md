@@ -4,6 +4,12 @@ Bộ khung vận hành AI cho team nhỏ (2–5 người) — 1 lệnh cài xong
 
 ## Cài vào dự án mới
 
+**Windows (PowerShell):**
+```powershell
+irm https://raw.githubusercontent.com/hungngominh/agent-flow/main/scripts/install.ps1 | iex
+```
+
+**macOS / Linux:**
 ```bash
 curl -sSL https://raw.githubusercontent.com/hungngominh/agent-flow/main/scripts/install.sh | bash
 ```
