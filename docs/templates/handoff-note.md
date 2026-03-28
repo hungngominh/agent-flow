@@ -11,7 +11,7 @@
 - `[bd-xxxx]` <task title> — DONE, PR #<n>
 <!-- Add more lines as needed -->
 
-## Dang dở
+## Đang dở
 <!-- Tasks started but not finished -->
 - `[bd-xxxx]` <task title> — IN PROGRESS
   Lý do chưa xong: <specific reason>
