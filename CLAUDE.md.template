@@ -1,0 +1,110 @@
+# CLAUDE.md — <Project Name>
+<!-- SETUP: Replace <Project Name> and fill every <...> section below.
+     Rename this file to CLAUDE.md at the repo root. -->
+
+---
+
+## 1. Immutable Rules
+<!-- These NEVER change regardless of context. AI treats violations as blockers. -->
+
+- **Language:** All code in <TypeScript | Go | Python | other>
+- **Framework conventions:** Follow <link-to-style-guide-or-describe-here>
+- **Response language:** Reply to the user in <Tiếng Việt | English | other>
+- **Tools ALLOWED:** <list tools/CLIs the AI may use>
+- **Tools FORBIDDEN:** <list tools/CLIs the AI must never use>
+
+---
+
+## 2. Execution Policy
+
+### Triage (run BEFORE every task)
+AI MUST classify before doing anything:
+
+1. Work type: `idea | bug | feature | refactor | spike | docs | chore`
+2. Rollback cost: `LOW` (safe revert) | `HIGH` (touches auth/billing/data/contract)
+3. Scope: `SMALL` (1 module) | `MEDIUM` (1 service/context) | `LARGE` (multi-service)
+
+Flow selection:
+- rollback=HIGH → FULL or STANDARD (never LITE)
+- scope=LARGE → FULL
+- scope=MEDIUM, rollback=LOW/MEDIUM → STANDARD
+- scope=SMALL, rollback=LOW → LITE
+
+**Re-triage required** when: discovered work increases scope, or task touches
+auth/billing/data/contract that wasn't initially obvious.
+
+### Layer Precedence
+`CLAUDE.md > OpenSpec > Beads > Superpowers`
+
+When layers conflict: update the lower-layer artifact, do NOT override the higher.
+
+### Discovered Work
+Create `bd create` with `discovered_from:<current-task-id>`. Report to user.
+**Never silently do out-of-scope work.**
+
+### Decision Boundary
+AI MUST ask the user (never self-decide) when:
+- Spec is ambiguous or contradictory
+- Multiple valid solutions with significant trade-offs
+- Change may affect external contracts
+
+---
+
+## 3. Quality Gates
+Every task before `bd close`:
+
+**DELIVERY**
+- [ ] `verify_against_spec`: behavior matches spec requirement (not just tests)
+- [ ] `verify_against_acceptance`: each delivery acceptance criterion checked
+- [ ] Tests pass — or explicitly documented as "N/A: <reason>"
+
+**GOVERNANCE**
+- [ ] `spec_delta_checked`: OpenSpec delta archived or confirmed "no update needed"
+- [ ] `execution.pr_ref` filled
+- [ ] `execution.verification_ref` filled (CI link / test report / screenshot / benchmark)
+
+**NEGATIVE CHECKS**
+- [ ] No CLAUDE.md rule violations introduced
+- [ ] No breaking changes outside spec scope
+- [ ] No behavior in code outside current task scope
+
+---
+
+## 4. Update Obligations
+AI MUST update artifacts when:
+
+| Event | Action |
+|-------|--------|
+| Code changes behavior | Open delta spec in OpenSpec |
+| Spec/design changes | Sync Beads tasks (priority / status / dependency) |
+| Code has out-of-scope behavior | Create discovered task OR rollback excess |
+| Session ends | Write handoff note + `bd dolt push` |
+
+---
+
+## 5. Forbidden Behaviors
+AI MUST NEVER:
+- Work outside task scope without creating a task first
+- Run `bd close` before passing the quality gate
+- Override a higher-layer rule with a lower-layer decision
+- Claim "done" without `verify_against_spec` + `verify_against_acceptance`
+- Assume "tests pass = spec correct"
+- Self-decide when spec is ambiguous or trade-offs are large
+
+---
+
+## 6. Repo-Specific Commands
+<!-- Fill these in. AI will use EXACTLY these commands — wrong commands waste time. -->
+
+| Action | Command |
+|--------|---------|
+| Run tests | `<command>` |
+| Lint / format | `<command>` |
+| Build | `<command>` |
+| Run locally | `<command>` |
+
+**Definition of Done for this repo:**
+- [ ] Tests pass
+- [ ] Lint clean
+- [ ] <add repo-specific criterion>
+- [ ] <add repo-specific criterion>
