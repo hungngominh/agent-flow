@@ -18,7 +18,7 @@ for f in "${FILES[@]}"; do
     continue
   fi
   # Fail if any template file contains TODO or TBD (we don't want draft content shipped)
-  matches=$(grep -niE '\bTODO\b|\bTBD\b' "$f" || true)
+  matches=$(grep -nE '\bTODO\b|\bTBD\b' "$f" || true)
   if [ -n "$matches" ]; then
     echo "DRAFT CONTENT: $f"
     echo "$matches" | sed 's/^/  /'
@@ -46,7 +46,7 @@ for f in "${PLAYBOOK[@]}"; do
     ERRORS=$((ERRORS + 1))
   else
     # Fail if any playbook file contains TODO or TBD (we don't want draft content shipped)
-    matches=$(grep -niE '\bTODO\b|\bTBD\b' "$f" || true)
+    matches=$(grep -nE '\bTODO\b|\bTBD\b' "$f" || true)
     if [ -n "$matches" ]; then
       echo "DRAFT CONTENT: $f"
       echo "$matches" | sed 's/^/  /'
