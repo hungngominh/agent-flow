@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Validate: no unfilled placeholders remain in template outputs.
+# Validate: framework files exist and contain no draft (TODO/TBD) content.
 # Usage: bash scripts/validate-templates.sh
 set -euo pipefail
+cd "$(dirname "$0")/.."
 
 ERRORS=0
 FILES=(
@@ -16,8 +17,15 @@ for f in "${FILES[@]}"; do
     ERRORS=$((ERRORS + 1))
     continue
   fi
-  # Files must exist. Placeholders like <lệnh> are intentional in templates.
-  echo "OK: $f"
+  # Fail if any template file contains TODO or TBD (we don't want draft content shipped)
+  matches=$(grep -niE '\bTODO\b|\bTBD\b' "$f" || true)
+  if [ -n "$matches" ]; then
+    echo "DRAFT CONTENT: $f"
+    echo "$matches" | sed 's/^/  /'
+    ERRORS=$((ERRORS + 1))
+  else
+    echo "OK: $f"
+  fi
 done
 
 # Check playbook files exist
@@ -38,8 +46,10 @@ for f in "${PLAYBOOK[@]}"; do
     ERRORS=$((ERRORS + 1))
   else
     # Fail if any playbook file contains TODO or TBD (we don't want draft content shipped)
-    if grep -qiE '\bTODO\b|\bTBD\b' "$f"; then
-      echo "DRAFT CONTENT: $f contains TODO/TBD"
+    matches=$(grep -niE '\bTODO\b|\bTBD\b' "$f" || true)
+    if [ -n "$matches" ]; then
+      echo "DRAFT CONTENT: $f"
+      echo "$matches" | sed 's/^/  /'
       ERRORS=$((ERRORS + 1))
     else
       echo "OK: $f"
