@@ -238,9 +238,11 @@ Handoff note là bắt buộc khi kết thúc session. Format tối thiểu:
 
 ## 3. Quality Gates
 (điều kiện bắt buộc trước khi claim done)
-- Delivery acceptance: verify behavior, tests pass (or justified skip)
-- Governance acceptance: spec_delta_checked, links present
-- `bd close` prerequisites: xem Section 6 của design doc
+- Delivery acceptance: verify behavior theo từng acceptance criteria, tests pass (or justified skip)
+- Governance acceptance: spec_delta_checked, implementation_links_present
+- `bd close` prerequisites (inline — không cần tra design doc):
+  DELIVERY: ✅ verify behavior, ✅ verify spec requirement, ✅ tests pass or N/A
+  GOVERNANCE: ✅ spec delta archived/confirmed, ✅ pr_ref filled, ✅ verification_ref filled
 
 ## 4. Update Obligations
 (khi nào AI BẮT BUỘC cập nhật artifact)
@@ -271,6 +273,39 @@ Handoff note là bắt buộc khi kết thúc session. Format tối thiểu:
 ---
 
 ## 10. Luồng dữ liệu điển hình
+
+### Feature trung bình (STANDARD flow)
+
+```
+Dev có idea / bug rollback cost MEDIUM
+    │
+    ▼
+[Tầng 0] Triage → 1 service / 1 bounded context → Level: STANDARD
+    │
+    ▼
+[Tầng 1 CLAUDE.md] AI đọc behavioral contract
+    │
+    ▼
+[Tầng 2 OpenSpec: /opsx:propose] proposal → specs → design → tasks.md
+    │  (Bỏ qua brainstorming — scope đã rõ)
+    ▼
+[Tầng 3 Beads] Import tasks, link source refs, set dependencies
+    │
+    ▼
+[Tầng 4 Superpowers: executing-plans]
+    │
+    ▼
+[Tầng 3 Beads] bd ready → bd update --claim → làm việc
+    │
+    ▼
+[Tầng 4 Superpowers: verification-before-completion]
+    │
+    ▼
+[Quality Gate] Delivery ✅ + Governance ✅ → bd close
+    │
+    ▼
+[Tầng 2 OpenSpec: /opsx:archive] → bd dolt push
+```
 
 ### Feature mới (FULL flow)
 
