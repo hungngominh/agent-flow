@@ -1,0 +1,55 @@
+# Beads Task Template — Layered AI Workflow Framework
+# Usage: copy this file, fill in all fields, run `bd create` or paste into your Beads workflow.
+# Remove comments before submitting to Beads.
+
+# ── Core ─────────────────────────────────────────────────────────────────────
+id: bd-xxxx               # assigned by Beads on creation
+title: "<Short, clear description of what this task does>"
+type: bug                 # bug | feature | task | epic | chore | message
+priority: P2              # P0=critical | P1=high | P2=medium | P3=low | P4=backlog
+status: todo              # todo | ready | in_progress | blocked | review | done
+
+# ── Intent (immutable — captures goal at creation time) ───────────────────────
+intent: "<What this task is trying to achieve. Do NOT update if spec evolves.>"
+# When spec changes, use intent to decide: is this task still valid?
+# If not → split or recreate with new intent. Never mutate intent.
+
+# ── Source Links (where did this task come from?) ─────────────────────────────
+source:
+  spec_ref: "openspec/specs/<domain>/spec.md#<requirement-anchor>"
+  design_ref: "openspec/changes/<change-name>/design.md"
+  decision_ref: "openspec/changes/<change-name>/design.md#<decision-anchor>"
+  discovered_from: null   # set to bd-xxxx if spawned while working on another task
+
+# ── Execution Links (what technical changes implement this task?) ──────────────
+execution:
+  branch_ref: null        # git branch name (e.g. feature/jwt-refresh)
+  commit_ref: null        # git commit SHA or short message
+  pr_ref: null            # PR URL or number
+  verification_ref: null  # REQUIRED before bd close. Accepted evidence types:
+                          #   CI run link  |  test report  |  screenshot/manual note  |  benchmark
+
+# ── Acceptance Criteria ───────────────────────────────────────────────────────
+acceptance:
+  delivery:
+    # verify_against_spec: does behavior match the spec scenario?
+    - "[ ] verify_against_spec: <spec scenario link or description>"
+    # verify_against_acceptance: edge cases and specific behaviors
+    - "[ ] verify_against_acceptance: <describe specific behavior to verify>"
+  governance:
+    - "[ ] tests_added_or_updated: required when applicable (skip = justify)"
+    - "[ ] verification_passed: yes"
+    - "[ ] spec_delta_checked: yes"
+    - "[ ] implementation_links_present: yes"
+
+# ── Definition of Ready ───────────────────────────────────────────────────────
+# Task MUST meet ALL of these before status → ready:
+#   ✅ spec_ref or clear rationale present
+#   ✅ acceptance criteria are verifiable (not vague)
+#   ✅ dependencies are known (no unknown blockers)
+#   ✅ scope is unambiguous
+
+# ── Dependencies ─────────────────────────────────────────────────────────────
+depends_on: []            # list of bd-ids that must be done first
+blocked_by: []            # list of bd-ids or external blocker string
+blocked_reason: []        # one entry per blocked_by item (1-to-1 mapping)
