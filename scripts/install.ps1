@@ -1,8 +1,11 @@
-# install.ps1 — Bootstrap agent-flow framework in current project (Windows)
-# Usage: irm https://raw.githubusercontent.com/hungngominh/agent-flow/main/scripts/install.ps1 | iex
+# install.ps1 - Bootstrap agent-flow framework in current project (Windows)
+# Usage: irm https://raw.githubusercontent.com/hungngominh/agent-flow/master/scripts/install.ps1 | iex
 
 $ErrorActionPreference = "Stop"
-$REPO = "https://raw.githubusercontent.com/hungngominh/agent-flow/main"
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+
+$REPO = "https://raw.githubusercontent.com/hungngominh/agent-flow/master"
 
 function Download-File($url, $dest) {
     $dir = Split-Path $dest -Parent
@@ -13,23 +16,23 @@ function Download-File($url, $dest) {
 }
 
 Write-Host ""
-Write-Host "🚀 agent-flow — Cài đặt AI Workflow Framework" -ForegroundColor Cyan
-Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
+Write-Host "agent-flow - Cai dat AI Workflow Framework" -ForegroundColor Cyan
+Write-Host "===========================================" -ForegroundColor Cyan
 Write-Host ""
 
-# ── Tạo thư mục ──────────────────────────────────────────────────────────────
+# Tao thu muc
 New-Item -ItemType Directory -Path "docs\templates" -Force | Out-Null
 New-Item -ItemType Directory -Path "docs\playbook"  -Force | Out-Null
 New-Item -ItemType Directory -Path "scripts"         -Force | Out-Null
 
-# ── Download templates ────────────────────────────────────────────────────────
-Write-Host "📄 Tải templates..."
+# Download templates
+Write-Host "Tai templates..."
 Download-File "$REPO/CLAUDE.md.template"             "CLAUDE.md.template"
 Download-File "$REPO/docs/templates/beads-task.yaml" "docs\templates\beads-task.yaml"
 Download-File "$REPO/docs/templates/handoff-note.md" "docs\templates\handoff-note.md"
 
-# ── Download playbook ─────────────────────────────────────────────────────────
-Write-Host "📚 Tải playbook..."
+# Download playbook
+Write-Host "Tai playbook..."
 $playbooks = @(
     "README.md", "01-architecture.md", "02-triage.md", "03-flows.md",
     "04-beads-guide.md", "05-openspec-guide.md", "06-quality-gates.md",
@@ -39,52 +42,52 @@ foreach ($f in $playbooks) {
     Download-File "$REPO/docs/playbook/$f" "docs\playbook\$f"
 }
 
-# ── Download validation script ────────────────────────────────────────────────
-Write-Host "🔍 Tải validation script..."
+# Download validation script
+Write-Host "Tai validation script..."
 Download-File "$REPO/scripts/validate-templates.sh" "scripts\validate-templates.sh"
 
-# ── Copy CLAUDE.md ────────────────────────────────────────────────────────────
+# Copy CLAUDE.md
 if (-not (Test-Path "CLAUDE.md")) {
     Copy-Item "CLAUDE.md.template" "CLAUDE.md"
     Write-Host ""
-    Write-Host "⚠️  CLAUDE.md đã được tạo — cần điền thông tin dự án:" -ForegroundColor Yellow
-    Write-Host "   Mở CLAUDE.md và thay tất cả <placeholder>" -ForegroundColor Yellow
+    Write-Host "[!] CLAUDE.md da duoc tao - can dien thong tin du an:" -ForegroundColor Yellow
+    Write-Host "    Mo CLAUDE.md va thay tat ca <placeholder>" -ForegroundColor Yellow
 } else {
     Write-Host ""
-    Write-Host "ℹ️  CLAUDE.md đã tồn tại — giữ nguyên, không ghi đè." -ForegroundColor Yellow
+    Write-Host "[i] CLAUDE.md da ton tai - giu nguyen, khong ghi de." -ForegroundColor Yellow
 }
 
-# ── Setup Beads (nếu bd đã cài) ───────────────────────────────────────────────
+# Setup Beads (neu bd da cai)
 if (Get-Command bd -ErrorAction SilentlyContinue) {
     Write-Host ""
-    Write-Host "🔗 Phát hiện Beads — chạy bd init + bd setup claude..."
+    Write-Host "Phat hien Beads - chay bd init + bd setup claude..."
     bd init 2>$null; bd setup claude 2>$null
 } else {
     Write-Host ""
-    Write-Host "ℹ️  Beads chưa cài. Để cài:" -ForegroundColor Yellow
-    Write-Host "   npm install -g @beads/bd && bd init && bd setup claude"
+    Write-Host "[i] Beads chua cai. De cai:" -ForegroundColor Yellow
+    Write-Host "    npm install -g @beads/bd && bd init && bd setup claude"
 }
 
-# ── Setup OpenSpec (nếu openspec đã cài) ─────────────────────────────────────
+# Setup OpenSpec (neu openspec da cai)
 if (Get-Command openspec -ErrorAction SilentlyContinue) {
     Write-Host ""
-    Write-Host "📋 Phát hiện OpenSpec — chạy openspec init..."
+    Write-Host "Phat hien OpenSpec - chay openspec init..."
     openspec init 2>$null
 } else {
     Write-Host ""
-    Write-Host "ℹ️  OpenSpec chưa cài. Để cài:" -ForegroundColor Yellow
-    Write-Host "   npm install -g @fission-ai/openspec && openspec init"
+    Write-Host "[i] OpenSpec chua cai. De cai:" -ForegroundColor Yellow
+    Write-Host "    npm install -g @fission-ai/openspec && openspec init"
 }
 
-# ── Done ──────────────────────────────────────────────────────────────────────
+# Done
 Write-Host ""
-Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Green
-Write-Host "✅ agent-flow framework đã cài xong!" -ForegroundColor Green
+Write-Host "===========================================" -ForegroundColor Green
+Write-Host "OK: agent-flow framework da cai xong!" -ForegroundColor Green
 Write-Host ""
-Write-Host "Bước tiếp theo:"
-Write-Host "  1. Điền CLAUDE.md (thay tất cả <placeholder>)"
-Write-Host "  2. Đọc playbook: docs\playbook\README.md"
+Write-Host "Buoc tiep theo:"
+Write-Host "  1. Dien CLAUDE.md (thay tat ca <placeholder>)"
+Write-Host "  2. Doc playbook: docs\playbook\README.md"
 Write-Host "  3. Superpowers: /install superpowers (trong Claude Code chat)"
 Write-Host ""
-Write-Host "Tài liệu: https://github.com/hungngominh/agent-flow"
+Write-Host "Tai lieu: https://github.com/hungngominh/agent-flow"
 Write-Host ""
